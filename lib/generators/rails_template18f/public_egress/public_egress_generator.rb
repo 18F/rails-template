@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "rails/generators"
+require "colorize"
 
 module RailsTemplate18f
   module Generators
@@ -18,6 +19,14 @@ module RailsTemplate18f
         unless terraform_dir_exists?
           fail "Run `rails g rails_template18f:terraform` before running this generator"
         end
+      end
+
+      def update_terraform_readme
+        insert_into_file "terraform/README.md", <<~EOR, before: "\n## Set up a new environment manually"
+
+          Passing the `-m` flag to `create_service_account.sh` is required for the account that will run terraform
+        EOR
+        gsub_file "terraform/README.md", /(create_service_account.sh -s <SPACE_NAME> -u <ACCOUNT_NAME>)/, '\1 -m'
       end
 
       def use_space_module
@@ -42,7 +51,20 @@ module RailsTemplate18f
 
       def update_boundary_diagram
         boundary_filename = "doc/compliance/apps/application.boundary.md"
-        # insert_into_file boundary_filename, <<EOB
+        insert_into_file boundary_filename, <<EOB, after: "System_Boundary(inventory, \"Application\") {\n"
+                Boundary(restricted_space, "Restricted egress space") {
+                }
+                Boundary(egress_space, "Public egress space") {
+                    Container(proxy, "<&layers> Egress Proxy", "Caddy, cg-egress-proxy", "Proxy with allow-list of external connections")
+                }
+EOB
+        insert_into_file boundary_filename, <<~EOB, before: "@enduml"
+          Rel(app, proxy, "Proxy outbound connections", "https (443)")
+        EOB
+        puts "\n ================ TODO ================ \n".yellow
+        puts "Update your application boundary to:"
+        puts "1. Place application and services within the Restricted egress space"
+        puts "2. Connect outbound connections through the egress proxy"
       end
 
       no_tasks do

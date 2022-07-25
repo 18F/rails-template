@@ -26,7 +26,7 @@ RSpec.describe RailsTemplate18f::Generators::PublicEgressGenerator, type: :gener
 
     it "adds the proxy to the boundary diagram" do
       boundary_file = "doc/compliance/apps/application.boundary.md"
-      expect(file(boundary_file)).to contain("System(public_proxy, \"CG Egress Proxy\"")
+      expect(file(boundary_file)).to contain("Container(proxy, \"<&layers> Egress Proxy\"")
     end
   end
 end
