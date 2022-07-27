@@ -24,7 +24,7 @@ module RailsTemplate18f
       def update_terraform_readme
         insert_into_file "terraform/README.md", <<~EOR, before: "\n## Set up a new environment manually"
 
-          Passing the `-m` flag to `create_service_account.sh` is required for the account that will run terraform
+          Passing the `-m` flag to `create_service_account.sh` is required for the account that will run terraform.
         EOR
         gsub_file "terraform/README.md", /(create_service_account.sh -s <SPACE_NAME> -u <ACCOUNT_NAME>)/, '\1 -m'
       end
@@ -43,6 +43,35 @@ module RailsTemplate18f
 
       def copy_deploy_script
         copy_file "deploy_egress_proxy.rb", "bin/ops/deploy_egress_proxy.rb", mode: :preserve
+      end
+
+      def add_to_deploy_steps
+        if file_exists?(".github/workflows/deploy-staging.yml")
+          append_to_file ".github/workflows/deploy-staging.yml", <<EOD
+      - name: Deploy egress proxy
+        run: ./bin/ops/deploy_egress_proxy.rb -s #{cloud_gov_staging_space} -a #{app_name}-staging
+EOD
+        end
+        if file_exists?(".github/workflows/deploy-production.yml")
+          append_to_file ".github/workflows/deploy-production.yml", <<EOD
+      - name: Deploy egress proxy
+        run: ./bin/ops/deploy_egress_proxy.rb -s #{cloud_gov_production_space} -a #{app_name}-production
+EOD
+        end
+        if file_exists?(".circleci/config.yml")
+          insert_into_file ".circleci/config.yml", <<EOD, before: "  deploy_production:"
+      - run:
+          name: Deploy egress proxy
+          working_directory: bin/ops
+          command: ./deploy_egress_proxy.rb -s #{cloud_gov_staging_space} -a #{app_name}-staging
+EOD
+          insert_into_file ".circleci/config.yml", <<EOD, after: "rails_master_key: PRODUCTION_RAILS_MASTER_KEY\n"
+      - run:
+          name: Deploy egress proxy
+          working_directory: bin/ops
+          command: ./deploy_egress_proxy.rb -s #{cloud_gov_production_space} -a #{app_name}-production
+EOD
+        end
       end
 
       def update_readme
@@ -95,7 +124,8 @@ EOB
               cf_password   = var.cf_password
               cf_org_name   = local.cf_org_name
               cf_space_name = local.cf_space_name
-              space_developers = [
+              # deployers should include any user or service account ID that will deploy the egress proxy
+              deployers = [
                 var.cf_user
               ]
             }

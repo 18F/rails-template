@@ -25,7 +25,7 @@ variable "cf_space_name" {
   description = "cloud.gov space name (staging or prod)"
 }
 
-variable "space_developers" {
-  type        = list(any)
-  description = "List of cloud.gov usernames that should have SpaceDeveloper on egress space"
+variable "deployers" {
+  type        = set(string)
+  description = "List of cloud.gov usernames that should be able to set space egress rules and deploy to the space"
 }

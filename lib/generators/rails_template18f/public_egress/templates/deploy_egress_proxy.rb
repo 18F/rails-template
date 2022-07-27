@@ -21,12 +21,16 @@ if options[:apps].nil?
   exit 1
 end
 
+def run(command)
+  system(command) or exit $?.exitstatus
+end
+
 directory = File.dirname(__FILE__)
 
-system "#{File.join(directory, "set_space_egress.sh")} -s #{options[:space]}-egress -p"
+run "#{File.join(directory, "set_space_egress.sh")} -s #{options[:space]}-egress -p"
 
 Dir.mktmpdir do |dir|
-  system "git clone https://github.com/GSA/cg-egress-proxy.git #{dir}"
+  run "git clone https://github.com/GSA/cg-egress-proxy.git #{dir}"
   config_dir = File.join(directory, "../../config/deployment/egress_proxy")
   options[:apps].split(",").each do |app|
     begin
@@ -40,5 +44,5 @@ Dir.mktmpdir do |dir|
       warn "config/deployment/egress_proxy/#{app}.deny.acl did not exist. Please create it if you need to customize the app's deny rules"
     end
   end
-  system "cd #{dir}; make; bin/cf-deployproxy #{options[:apps]}"
+  run "cd #{dir}; make; bin/cf-deployproxy #{options[:apps]}"
 end
