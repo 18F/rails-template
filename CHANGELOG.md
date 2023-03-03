@@ -4,6 +4,7 @@
 - generalize create_space_deployer.sh to create_service_account.sh to make it easier to create SpaceAuditor users
 - move support scripts set_space_egress.sh, create_service_account.sh, and destroy_service_account.sh out of terraform generator
 - Create rails_template18f:public_egress generator for integrating with cg-egress-proxy
+- [Use exec when starting rails server](https://docs.cloudfoundry.org/devguide/deploy-apps/manifest-attributes.html#start-commands:~:text=To%20resolve%20this,process.%20For%20example%3A)
 
 ## [0.8.0] - 2022-07-14
 
